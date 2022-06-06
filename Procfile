@@ -1,1 +1,1 @@
-web: gunicorn travel_visa_bot_webhook:server
+web: gunicorn main:server
