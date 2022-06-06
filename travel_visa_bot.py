@@ -10,15 +10,10 @@ import pickle
 from make_keyboard import make_keyboard
 from try_cut_str_len import split_str
 import config
-from flask import Flask, request
-import os
 
 
 TOKEN = config.bot_id
-APP_URL = f'https://git.heroku.com/travel-visa-bot.git/{TOKEN}'
 bot = telebot.TeleBot(TOKEN)
-server = Flask(__name__)
-
 
 TG = None
 counter_message = 0
@@ -33,6 +28,229 @@ all_countries_name_lower: list
 country: str
 message_history = []
 id_main_kb = None
+
+
+def main():
+    collect_names_country_in_one_area()
+
+    @bot.message_handler(commands=['start'])
+    def start_user(message):
+        global counter_message
+        counter_message += 1
+        delete_message(message, 0, counter_message, m_keyb=False)
+        collect_names_country_in_one_area()
+        send_notification_to_me(message)
+        write_user(message)
+        text = f'Привет, {message.from_user.first_name}!\n' \
+               f'Этот бот сможет сориентировать вас о требованиях других стран по правилам въезда по Covid-19\n\n' \
+               f'Бот показывает информацию о правилах пересечения границ для беларусов.\n\n' \
+               f'   - правила по Covid-19\n' \
+               f'     (источник: https://www.tez-tour.com/)\n\n' \
+               f'   - информация о визах, их стоимости, документах для подачи\n' \
+               f'     (источник: https://vizoviyminsk.by/\n\n' \
+               f'   - информация про безвизовые страны\n' \
+               f'     (источник: https://tuda-suda.by/)\n\n' \
+               f'Можно узнать информацию отдельно по:\n' \
+               f'   - Covid ограничениям\n' \
+               f'   - Визам (собраны страны в рубрике Виза)\n' \
+               f'   - Безвизовым странам\n\n' \
+               f'А также, в категории поиск по странам, можно узнать, кликнув на страну, ' \
+               f'какие требования предъявляются ко всем, кто пересекает ее границу\n\n' \
+               f'<b>/start</b> - перезапустить бот\n' \
+            f'<b>/help</b> - получить информацию о боте\n' \
+            f'<b>clear</b> - очистить окно бота от лишней информации при необходимости'
+        bot.send_message(message.chat.id, text, disable_web_page_preview=True, parse_mode='html')
+        main_keyboard(message)
+        counter_message += 1
+
+
+    @bot.message_handler(commands=['help'])
+    def help_user(message):
+        global counter_message
+        counter_message += 1
+        delete_message(message, 0, counter_message, m_keyb=False)
+        text = \
+            f'Этот бот сможет сориентировать вас о требованиях других стран по правилам въезда по Covid-19\n\n' \
+            f'Бот показывает информацию о правилах пересечения границ для беларусов.\n\n' \
+            f'   - правила по Covid-19\n' \
+            f'     (источник: https://www.tez-tour.com/)\n\n' \
+            f'   - информация о визах, их стоимости, документах для подачи\n' \
+            f'     (источник: https://vizoviyminsk.by/\n\n' \
+            f'   - информация про безвизовые страны\n' \
+            f'     (источник: https://tuda-suda.by/)\n\n' \
+            f'Можно узнать информацию отдельно по:\n' \
+            f'   - Covid ограничениям\n' \
+            f'   - Визам (собраны страны в рубрике Виза)\n' \
+            f'   - Безвизовым странам\n\n' \
+            f'А также, в категории поиск по странам, можно узнать, кликнув на страну, ' \
+            f'какие требования предъявляются ко всем, кто пересекает ее границу\n\n' \
+            f'<b>/start</b> - перезапустить бот\n' \
+            f'<b>/help</b> - получить информацию о боте\n' \
+            f'<b>clear</b> - очистить окно бота от лишней информации при необходимости'
+        bot.send_message(message.chat.id, text, disable_web_page_preview=True, parse_mode='html')
+        counter_message += 1
+
+
+    @bot.message_handler(content_types=['text'])
+    def catch_text(message):
+        global \
+            all_countries_name, \
+            visa_list, \
+            free_visa_list, \
+            covid_list, \
+            TG, \
+            counter_message,\
+            country, \
+            all_countries_name_lower
+
+        if message.text.lower() == 'clear':
+            counter_message += 1
+            clear_bot(message)
+
+        if message.text.lower() == 'covid-19':
+            counter_message += 1
+            delete_message(message, 0, counter_message, m_keyb=True)
+            covid_menu(message)
+
+        if message.text.lower() == 'виза':
+            TG = 'visa'
+            counter_message += 1
+            delete_message(message, 0, counter_message, m_keyb=True)
+            visa_menu(message)
+
+        if message.text.lower() == 'безвиз':
+            TG = 'free_visa'
+            counter_message += 1
+            delete_message(message, 0, counter_message, m_keyb=True)
+            free_visa_menu(message)
+
+        if message.text.lower() == 'поиск по странам':
+            TG = 'all_countries'
+            counter_message += 1
+            delete_message(message, 0, counter_message, m_keyb=True)
+            all_countries_menu(message)
+
+        if message.text.lower() == 'reload' and message.chat.id == 137336064:
+            try:
+                bot.send_message(
+                    message.chat.id,
+                    f"Обновление баз данных началась в {datetime.datetime.now().strftime('%H:%M %d-%m-%Y')}"
+                )
+                counter_message += 1
+
+                fresh_all_data_to_files()
+                bot.send_message(
+                    message.chat.id,
+                    f"Обновление баз данных прошла успешно {datetime.datetime.now().strftime('%H:%M %d-%m-%Y')}"
+                )
+                counter_message += 1
+
+            except Exception as e:
+                bot.send_message(message.chat.id, f'Обновления баз данных не произошло. Ошибка {e}')
+                counter_message += 1
+
+        if message.text.lower() == 'refresh' and message.chat.id == 137336064:
+            try:
+                bot.send_message(
+                    message.chat.id,
+                    f"Обновление переменных из баз началось в {datetime.datetime.now().strftime('%H:%M %d-%m-%Y')}"
+                )
+                counter_message += 1
+
+                collect_names_country_in_one_area()
+                bot.send_message(
+                    message.chat.id,
+                    f"Обновление переменных из баз прошла успешно {datetime.datetime.now().strftime('%H:%M %d-%m-%Y')}"
+                )
+                counter_message += 1
+            except Exception as e:
+                bot.send_message(message.chat.id, f'Обновление переменных из баз не прошло. Ошибка {e}')
+                counter_message += 1
+
+        if message.text.lower() == 'read users':
+            counter_message += 1
+            read_users(message)
+
+        if message.text.lower() in all_countries_name_lower:
+            counter_message += 1
+            delete_message(message, 0, counter_message, m_keyb=False)
+            country = all_countries_name[all_countries_name_lower.index(message.text.lower())]
+            send_all_countries_menu(message, data=country)
+        else:
+            counter_message += 1
+            text = 'Возможно, по этой стране нет информации\n' \
+                    'Вы можете воспользоваться меню внизу и выбрать страну из списка'
+            if message.chat.id == my_id:
+                if message.text.lower() not in ['clear', 'refresh', 'reload', 'read users', 'виза', 'безвиз', 'поиск по странам', 'covid-19']:
+                    bot.send_message(message.chat.id, text)
+                    counter_message += 1
+            else:
+                if message.text.lower() not in ['clear', 'виза', 'безвиз', 'поиск по странам', 'covid-19']:
+                    bot.send_message(message.chat.id, text)
+                    counter_message += 1
+
+
+    @bot.callback_query_handler(func=lambda call: True)
+    def send_inline(call):
+        global \
+            all_countries_name, \
+            visa_list, \
+            free_visa_list, \
+            covid_list, \
+            TG,\
+            country, \
+            counter_message
+
+        if call.message:
+            if call.data in ['продолжить',
+                                 'Covid-19 в других странах',
+                                 'безвиз в другие страны',
+                                 'визы в другие страны']:
+
+                match call.data:
+                    case 'Covid-19 в других странах':
+                        delete_message(call.message, 0, end=counter_message)
+                        covid_menu(call.message)
+                    case 'безвиз в другие страны':
+                        delete_message(call.message, 0, end=counter_message)
+                        free_visa_menu(call.message)
+                    case 'визы в другие страны':
+                        delete_message(call.message, 0, end=counter_message)
+                        visa_menu(call.message)
+
+            if call.data in all_countries_name and TG:
+                country = call.data
+
+            if call.data in all_countries_name and not TG:
+                country = call.data
+                send_all_countries_menu(call.message, call.data)
+
+            if TG == 'covid':
+                if call.data in covid_list:
+                    covid_send_info(call.message, name_country=country, tagg=None)
+
+            if TG == 'visa':
+                if call.data in visa_list:
+                    visa_send_info(call.message, name_country=country, tagg=None)
+
+            if TG == 'free_visa':
+                if call.data in free_visa_list:
+                    free_visa_send_info(call.message, name_country=country, tagg=None)
+
+            if TG == 'all_countries':
+                send_all_countries_menu(call.message, call.data)
+
+            if call.data == 'виза':
+                counter_message += 1
+                visa_send_info(call.message, name_country=country, tagg='all_countries')
+
+            if call.data == 'безвиз':
+                counter_message += 1
+                free_visa_send_info(call.message, name_country=country, tagg='all_countries')
+
+            if call.data == 'covid-19':
+                counter_message += 1
+                covid_send_info(call.message, name_country=country, tagg='all_countries')
 
 
 def fresh_all_data_to_files():
@@ -105,65 +323,10 @@ def collect_names_country_in_one_area():
             all_countries_name_lower.append(minim.lower())
         temp_all_countries.pop(temp_all_countries.index(minim))
 
+        print('functon collect area was start')
+
     return all_countries_name, visa_list, free_visa_list, covid_list, free_visa_dictionary_temp
     # список всех стран из всех категорий
-
-
-@bot.message_handler(commands=['start'])
-def start_user(message):
-    global counter_message
-    counter_message += 1
-    delete_message(message, 0, counter_message, m_keyb=False)
-    send_notification_to_me(message)
-    write_user(message)
-    text = f'Привет, {message.from_user.first_name}!\n' \
-           f'Этот бот сможет сориентировать вас о требованиях других стран по правилам въезда по Covid-19\n\n' \
-           f'Бот показывает информацию о правилах пересечения границ для беларусов.\n\n' \
-           f'   - правила по Covid-19\n' \
-           f'     (источник: https://www.tez-tour.com/)\n\n' \
-           f'   - информация о визах, их стоимости, документах для подачи\n' \
-           f'     (источник: https://vizoviyminsk.by/\n\n' \
-           f'   - информация про безвизовые страны\n' \
-           f'     (источник: https://tuda-suda.by/)\n\n' \
-           f'Можно узнать информацию отдельно по:\n' \
-           f'   - Covid ограничениям\n' \
-           f'   - Визам (собраны страны в рубрике Виза)\n' \
-           f'   - Безвизовым странам\n\n' \
-           f'А также, в категории поиск по странам, можно узнать, кликнув на страну, ' \
-           f'какие требования предъявляются ко всем, кто пересекает ее границу\n\n' \
-           f'<b>/start</b> - перезапустить бот\n' \
-        f'<b>/help</b> - получить информацию о боте\n' \
-        f'<b>clear</b> - очистить окно бота от лишней информации при необходимости'
-    bot.send_message(message.chat.id, text, disable_web_page_preview=True, parse_mode='html')
-    main_keyboard(message)
-    counter_message += 1
-
-
-@bot.message_handler(commands=['help'])
-def help_user(message):
-    global counter_message
-    counter_message += 1
-    delete_message(message, 0, counter_message, m_keyb=False)
-    text = \
-        f'Этот бот сможет сориентировать вас о требованиях других стран по правилам въезда по Covid-19\n\n' \
-        f'Бот показывает информацию о правилах пересечения границ для беларусов.\n\n' \
-        f'   - правила по Covid-19\n' \
-        f'     (источник: https://www.tez-tour.com/)\n\n' \
-        f'   - информация о визах, их стоимости, документах для подачи\n' \
-        f'     (источник: https://vizoviyminsk.by/\n\n' \
-        f'   - информация про безвизовые страны\n' \
-        f'     (источник: https://tuda-suda.by/)\n\n' \
-        f'Можно узнать информацию отдельно по:\n' \
-        f'   - Covid ограничениям\n' \
-        f'   - Визам (собраны страны в рубрике Виза)\n' \
-        f'   - Безвизовым странам\n\n' \
-        f'А также, в категории поиск по странам, можно узнать, кликнув на страну, ' \
-        f'какие требования предъявляются ко всем, кто пересекает ее границу\n\n' \
-        f'<b>/start</b> - перезапустить бот\n' \
-        f'<b>/help</b> - получить информацию о боте\n' \
-        f'<b>clear</b> - очистить окно бота от лишней информации при необходимости'
-    bot.send_message(message.chat.id, text, disable_web_page_preview=True, parse_mode='html')
-    counter_message += 1
 
 
 def main_keyboard(message, text=f'Организуйте свой поиск в любой рубрике,\nлибо введите название страны на удачу'):
@@ -176,168 +339,6 @@ def main_keyboard(message, text=f'Организуйте свой поиск в 
     markup.add(it1, it2, it3, it4)
     bot.send_message(message.chat.id, text, reply_markup=markup, parse_mode='html')
     counter_message += 1
-
-
-@bot.message_handler(content_types=['text'])
-def catch_text(message):
-    global \
-        all_countries_name, \
-        visa_list, \
-        free_visa_list, \
-        covid_list, \
-        TG, \
-        counter_message,\
-        country, \
-        all_countries_name_lower
-
-    if message.text.lower() == 'clear':
-        counter_message += 1
-        clear_bot(message)
-
-    if message.text.lower() == 'covid-19':
-        counter_message += 1
-        delete_message(message, 0, counter_message, m_keyb=True)
-        covid_menu(message)
-
-    if message.text.lower() == 'виза':
-        TG = 'visa'
-        counter_message += 1
-        delete_message(message, 0, counter_message, m_keyb=True)
-        visa_menu(message)
-
-    if message.text.lower() == 'безвиз':
-        TG = 'free_visa'
-        counter_message += 1
-        delete_message(message, 0, counter_message, m_keyb=True)
-        free_visa_menu(message)
-
-    if message.text.lower() == 'поиск по странам':
-        TG = 'all_countries'
-        counter_message += 1
-        delete_message(message, 0, counter_message, m_keyb=True)
-        all_countries_menu(message)
-
-    if message.text.lower() == 'reload' and message.chat.id == 137336064:
-        try:
-            bot.send_message(
-                message.chat.id,
-                f"Обновление баз данных началась в {datetime.datetime.now().strftime('%H:%M %d-%m-%Y')}"
-            )
-            counter_message += 1
-
-            fresh_all_data_to_files()
-            bot.send_message(
-                message.chat.id,
-                f"Обновление баз данных прошла успешно {datetime.datetime.now().strftime('%H:%M %d-%m-%Y')}"
-            )
-            counter_message += 1
-
-        except Exception as e:
-            bot.send_message(message.chat.id, f'Обновления баз данных не произошло. Ошибка {e}')
-            counter_message += 1
-
-    if message.text.lower() == 'refresh' and message.chat.id == 137336064:
-        try:
-            bot.send_message(
-                message.chat.id,
-                f"Обновление переменных из баз началось в {datetime.datetime.now().strftime('%H:%M %d-%m-%Y')}"
-            )
-            counter_message += 1
-
-            collect_names_country_in_one_area()
-            bot.send_message(
-                message.chat.id,
-                f"Обновление переменных из баз прошла успешно {datetime.datetime.now().strftime('%H:%M %d-%m-%Y')}"
-            )
-            counter_message += 1
-        except Exception as e:
-            bot.send_message(message.chat.id, f'Обновление переменных из баз не прошло. Ошибка {e}')
-            counter_message += 1
-
-    if message.text.lower() == 'read users':
-        counter_message += 1
-        read_users(message)
-
-    if message.text.lower() in all_countries_name_lower:
-        counter_message += 1
-        delete_message(message, 0, counter_message, m_keyb=False)
-        country = all_countries_name[all_countries_name_lower.index(message.text.lower())]
-        send_all_countries_menu(message, data=country)
-    else:
-        counter_message += 1
-        text = 'Возможно, по этой стране нет информации\n' \
-                'Вы можете воспользоваться меню внизу и выбрать страну из списка'
-        if message.chat.id == my_id:
-            if message.text.lower() not in ['clear', 'refresh', 'reload', 'read users', 'виза', 'безвиз', 'поиск по странам', 'covid-19']:
-                bot.send_message(message.chat.id, text)
-                counter_message += 1
-        else:
-            if message.text.lower() not in ['clear', 'виза', 'безвиз', 'поиск по странам', 'covid-19']:
-                bot.send_message(message.chat.id, text)
-                counter_message += 1
-
-
-@bot.callback_query_handler(func=lambda call: True)
-def send_inline(call):
-    global \
-        all_countries_name, \
-        visa_list, \
-        free_visa_list, \
-        covid_list, \
-        TG,\
-        country, \
-        counter_message
-
-    if call.message:
-        if call.data in ['продолжить',
-                             'Covid-19 в других странах',
-                             'безвиз в другие страны',
-                             'визы в другие страны']:
-
-            match call.data:
-                case 'Covid-19 в других странах':
-                    delete_message(call.message, 0, end=counter_message)
-                    covid_menu(call.message)
-                case 'безвиз в другие страны':
-                    delete_message(call.message, 0, end=counter_message)
-                    free_visa_menu(call.message)
-                case 'визы в другие страны':
-                    delete_message(call.message, 0, end=counter_message)
-                    visa_menu(call.message)
-
-        if call.data in all_countries_name and TG:
-            country = call.data
-
-        if call.data in all_countries_name and not TG:
-            country = call.data
-            send_all_countries_menu(call.message, call.data)
-
-        if TG == 'covid':
-            if call.data in covid_list:
-                covid_send_info(call.message, name_country=country, tagg=None)
-
-        if TG == 'visa':
-            if call.data in visa_list:
-                visa_send_info(call.message, name_country=country, tagg=None)
-
-        if TG == 'free_visa':
-            if call.data in free_visa_list:
-                free_visa_send_info(call.message, name_country=country, tagg=None)
-
-        if TG == 'all_countries':
-            send_all_countries_menu(call.message, call.data)
-
-        if call.data == 'виза':
-            counter_message += 1
-            visa_send_info(call.message, name_country=country, tagg='all_countries')
-
-        if call.data == 'безвиз':
-            counter_message += 1
-            free_visa_send_info(call.message, name_country=country, tagg='all_countries')
-
-        if call.data == 'covid-19':
-            counter_message += 1
-            covid_send_info(call.message, name_country=country, tagg='all_countries')
 
 
 def send_all_countries_menu(message, data):
@@ -674,24 +675,7 @@ def read_users(message):
         inline_kb(message, text, ['ok'], send='send', rw=1, butt_down=True)
 
 
-@server.route('/')
-def get_message():
-    json_string = request.get.data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return '!', 2000
-
-
-@server.route('/')
-def webhook():
-    bot.remove_webhook()
-    bot.set_webhook(APP_URL)
-    return '!', 2000
-
-
-
-if __name__ == '__main__':
-    server.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-    print(f"bot started at {datetime.datetime.now().strftime('%H:%M %d-%m-%Y')}")
-    collect_names_country_in_one_area()
+print('bot started')
+# collect_names_country_in_one_area()
+# bot.polling()
 
