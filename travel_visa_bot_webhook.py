@@ -14,7 +14,7 @@ bot = travel_visa_bot.bot
 travel_visa_bot.main()
 
 
-@server.route('/' + bot.token, method=['POST'])
+@server.route('/' + bot.token, methods=['POST'])
 def get_message():
     json_string = request.get_data().decode('utf-8')
     update = telebot.types.Update.de_json(json_string)
