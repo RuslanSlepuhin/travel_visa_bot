@@ -1,1 +1,1 @@
-web: python3.10.4 travel_visa_bot.py
+web: python3.10.4 travel_visa_bot_webhook.py
