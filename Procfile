@@ -1,1 +1,1 @@
-web: python3 travel_visa_bot_webhook.py
+web: gunicorn travel_visa_bot_webhook:server
