@@ -628,6 +628,8 @@ def free_visa_send_info(message, name_country, tagg=None):
 def covid_send_info(message, tagg=None):
     global counter_message, country
 
+    bot.send_message(message.chat.id, f'<b>country {country}</b>')
+
     covid_dictionary = read_covid_tez_in_file()
     flags_dictionary = get_data_flag_in_file()
 
