@@ -50,7 +50,7 @@ def main():
         global counter_message
         counter_message += 1
         delete_message(message, 0, counter_message, m_keyb=False)
-        send_notification_to_me(message)
+        # send_notification_to_me(message)
         # write_user(message)
         text = f'Привет, {message.from_user.first_name}!\n' \
                f'Этот бот сможет сориентировать вас о требованиях других стран по правилам въезда по Covid-19\n\n' \
@@ -550,7 +550,7 @@ def visa_send_info(message, name_country, tagg=None):
             print(f'флаг {name_country} не удалось отправить, ошибка {e}')
         counter_message += 1
 
-    data = visa_dictionary[country]
+    data = visa_dictionary[name_country]
     info = data[0]
     visa = data[1]
     count = 1
@@ -567,7 +567,14 @@ def visa_send_info(message, name_country, tagg=None):
                 bot.send_message(message.chat.id, line, parse_mode='html', disable_web_page_preview=True)
                 counter_message += 1
             else:
-                inline_kb(message, line, ['визы в другие страны', country], send='send', rw=1, butt_down=True, tagg=tagg)
+                inline_kb(
+                    message,
+                    line,
+                    ['визы в другие страны', name_country],
+                    send='send',
+                    rw=1,
+                    butt_down=True,
+                    tagg=tagg)
         count += 1
 
 
@@ -599,8 +606,15 @@ def free_visa_send_info(message, name_country, tagg=None):
                     free_text = f'\nОнлайн-виза\n'
 
             text = f'<b>{name_country}:</b>\n{free_text}\n{temp[name_country]}'
-            inline_kb(message, text, ['безвиз в другие страны', name_country], send='send', rw=1, butt_down=True, tagg=tagg)
-
+            inline_kb(
+                message,
+                text,
+                ['безвиз в другие страны', name_country],
+                send='send',
+                rw=1,
+                butt_down=True,
+                tagg=tagg
+            )
             break
 
 
@@ -614,7 +628,7 @@ def covid_send_info(message, name_country, tagg=None):
 
     if name_country in flags_dictionary:
         try:
-            bot.send_photo(message.chat.id, flags_dictionary[country])
+            bot.send_photo(message.chat.id, flags_dictionary[name_country])
         except Exception as e:
             print(f'флаг {name_country} не удалось отправить, ошибка {e}')
         counter_message += 1
