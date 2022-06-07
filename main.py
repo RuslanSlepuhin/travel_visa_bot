@@ -1,12 +1,12 @@
 from flask import Flask, request
 import os
 import telebot
-import travel_visa_bot
+import travel_visa_bot_polling
 
 
 server = Flask(__name__)
-bot = travel_visa_bot.bot
-travel_visa_bot.main()
+bot = travel_visa_bot_polling.bot
+travel_visa_bot_polling.main()
 
 
 @server.route('/' + bot.token, methods=['POST'])
