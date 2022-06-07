@@ -267,7 +267,7 @@ def main():
 
             if call.data == 'covid-19':
                 counter_message += 1
-                covid_send_info(call.message, name_country=country, tagg=None)
+                covid_send_info(call.message, tagg=None)
 
 
 #  возвращает список из всех стран, собранных в разных информационных категориях с разных сайтов
@@ -359,11 +359,9 @@ def main_keyboard(message, text=f'Организуйте свой поиск в 
 
 
 def send_all_countries_menu(message, data):
-    global country
     delete_message(message, 0, counter_message, m_keyb=False)
     buttons = []
     row: int
-    # country = data
     if data in visa_list:
         buttons.append('виза')
     if data in covid_list:
@@ -627,28 +625,53 @@ def free_visa_send_info(message, name_country, tagg=None):
             break
 
 
-def covid_send_info(message, name_country, tagg=None):
-    global counter_message
+def covid_send_info(message, tagg=None):
+    global counter_message, country
 
     covid_dictionary = read_covid_tez_in_file()
     flags_dictionary = get_data_flag_in_file()
 
     delete_message(message, 0, 5, m_keyb=True, text='<b>информация по Covid-19</b>')
 
-    if name_country in flags_dictionary:
+    if country in flags_dictionary:
         try:
-            bot.send_photo(message.chat.id, flags_dictionary[name_country])
+            bot.send_photo(message.chat.id, flags_dictionary[country])
         except Exception as e:
-            print(f'флаг {name_country} не удалось отправить, ошибка {e}')
+            print(f'флаг {country} не удалось отправить, ошибка {e}')
         counter_message += 1
     inline_kb(
         message,
-        f'<b>{name_country}</b>\n\n{covid_dictionary[name_country]}',
-        ['Covid-19 в других странах', name_country],
+        f'<b>{country}</b>\n\n{covid_dictionary[country]}',
+        ['Covid-19 в других странах', country],
         send='send',
         rw=1,
         butt_down=False,
         tagg=tagg)
+
+
+
+# def covid_send_info(message, name_country, tagg=None):
+#     global counter_message
+#
+#     covid_dictionary = read_covid_tez_in_file()
+#     flags_dictionary = get_data_flag_in_file()
+#
+#     delete_message(message, 0, 5, m_keyb=True, text='<b>информация по Covid-19</b>')
+#
+#     if name_country in flags_dictionary:
+#         try:
+#             bot.send_photo(message.chat.id, flags_dictionary[name_country])
+#         except Exception as e:
+#             print(f'флаг {name_country} не удалось отправить, ошибка {e}')
+#         counter_message += 1
+#     inline_kb(
+#         message,
+#         f'<b>{name_country}</b>\n\n{covid_dictionary[name_country]}',
+#         ['Covid-19 в других странах', name_country],
+#         send='send',
+#         rw=1,
+#         butt_down=False,
+#         tagg=tagg)
 
 
 def send_notification_to_me(message, text='Hi'):
