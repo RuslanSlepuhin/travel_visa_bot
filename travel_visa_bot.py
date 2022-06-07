@@ -31,16 +31,12 @@ id_main_kb = None
 
 
 def main():
-    collect_names_country_in_one_area()
-
     @bot.message_handler(commands=['start'])
     def start_user(message):
         global counter_message
         counter_message += 1
         delete_message(message, 0, counter_message, m_keyb=False)
-        collect_names_country_in_one_area()
         send_notification_to_me(message)
-        write_user(message)
         text = f'Привет, {message.from_user.first_name}!\n' \
                f'Этот бот сможет сориентировать вас о требованиях других стран по правилам въезда по Covid-19\n\n' \
                f'Бот показывает информацию о правилах пересечения границ для беларусов.\n\n' \
@@ -62,7 +58,6 @@ def main():
         bot.send_message(message.chat.id, text, disable_web_page_preview=True, parse_mode='html')
         main_keyboard(message)
         counter_message += 1
-
 
     @bot.message_handler(commands=['help'])
     def help_user(message):
@@ -89,7 +84,6 @@ def main():
             f'<b>clear</b> - очистить окно бота от лишней информации при необходимости'
         bot.send_message(message.chat.id, text, disable_web_page_preview=True, parse_mode='html')
         counter_message += 1
-
 
     @bot.message_handler(content_types=['text'])
     def catch_text(message):
@@ -157,7 +151,7 @@ def main():
                 )
                 counter_message += 1
 
-                collect_names_country_in_one_area()
+                collect_names_country_in_one_area('message text')
                 bot.send_message(
                     message.chat.id,
                     f"Обновление переменных из баз прошла успешно {datetime.datetime.now().strftime('%H:%M %d-%m-%Y')}"
@@ -188,7 +182,6 @@ def main():
                 if message.text.lower() not in ['clear', 'виза', 'безвиз', 'поиск по странам', 'covid-19']:
                     bot.send_message(message.chat.id, text)
                     counter_message += 1
-
 
     @bot.callback_query_handler(func=lambda call: True)
     def send_inline(call):
@@ -259,7 +252,7 @@ def fresh_all_data_to_files():
     write_data_visa_to_file()
     write_data_free_visa_to_file()
     write_covid_tez_to_file()
-    write_data_free_visa_dict_to_file(collect_names_country_in_one_area()[4])
+    write_data_free_visa_dict_to_file(collect_names_country_in_one_area('fresh all data')[4])
     print(f"reload finished at {datetime.datetime.now().strftime('%H:%M %d-%m-%Y')}")
 
 
@@ -270,7 +263,7 @@ def write_data_free_visa_dict_to_file(dictionary):
 
 
 #  возвращает список из всех стран, собранных в разных информационных категориях с разных сайтов
-def collect_names_country_in_one_area():
+def collect_names_country_in_one_area(text):
     global \
         all_countries_name, \
         visa_list, \
@@ -323,7 +316,7 @@ def collect_names_country_in_one_area():
             all_countries_name_lower.append(minim.lower())
         temp_all_countries.pop(temp_all_countries.index(minim))
 
-        print('functon collect area was start')
+        print(text)
 
     return all_countries_name, visa_list, free_visa_list, covid_list, free_visa_dictionary_temp
     # список всех стран из всех категорий
@@ -676,6 +669,6 @@ def read_users(message):
 
 
 print('bot started')
-# collect_names_country_in_one_area()
-# bot.polling()
+collect_names_country_in_one_area('start')
+
 
