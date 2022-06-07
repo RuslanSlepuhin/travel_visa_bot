@@ -513,7 +513,12 @@ def delete_message(
                 bot.delete_message(message.chat.id, message.message_id + 2)
             except Exception:
                 pass
-
+    if TG == 'all_countries':
+        try:
+            bot.delete_message(message.chat.id, message.message_id + 1)
+        except Exception:
+            pass
+        
     for i in range(start, end):
         try:
             bot.delete_message(message.chat.id, message.message_id-i)
