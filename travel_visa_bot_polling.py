@@ -51,7 +51,7 @@ def main():
         counter_message += 1
         delete_message(message, 0, counter_message, m_keyb=False)
         send_notification_to_me(message)
-        write_user(message)
+        # write_user(message)
         text = f'Привет, {message.from_user.first_name}!\n' \
                f'Этот бот сможет сориентировать вас о требованиях других стран по правилам въезда по Covid-19\n\n' \
                f'Бот показывает информацию о правилах пересечения границ для беларусов.\n\n' \
