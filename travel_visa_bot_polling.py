@@ -542,7 +542,7 @@ def visa_send_info(message, name_country, tagg=None):
     visa_dictionary = get_data_visa_in_file()
     flags_dictionary = get_data_flag_in_file()
 
-    delete_message(message, 0, counter_message,  m_keyb=True, text='<b>информация о визах</b>\nи условиях их получения')
+    delete_message(message, 0, counter_message,  m_keyb=True, text=f'{name_country}:\n\n<b>информация о визах</b>\nи условиях их получения')
 
     if name_country in flags_dictionary:
         try:
