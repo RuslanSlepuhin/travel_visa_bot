@@ -251,15 +251,15 @@ def main():
 
             if call.data == 'виза':
                 counter_message += 1
-                visa_send_info(call.message, name_country=country, tagg='all_countries')
+                visa_send_info(call.message, name_country=country, tagg=None)
 
             if call.data == 'безвиз':
                 counter_message += 1
-                free_visa_send_info(call.message, name_country=country, tagg='all_countries')
+                free_visa_send_info(call.message, name_country=country, tagg=None)
 
             if call.data == 'covid-19':
                 counter_message += 1
-                covid_send_info(call.message, name_country=country, tagg='all_countries')
+                covid_send_info(call.message, name_country=country, tagg=None)
 
 
 #  возвращает список из всех стран, собранных в разных информационных категориях с разных сайтов
@@ -355,7 +355,7 @@ def send_all_countries_menu(message, data):
     delete_message(message, 0, counter_message, m_keyb=False)
     buttons = []
     row: int
-    country = data
+    # country = data
     if data in visa_list:
         buttons.append('виза')
     if data in covid_list:
