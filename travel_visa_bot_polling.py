@@ -182,6 +182,7 @@ def main():
 
         if message.text.lower() in all_countries_name_lower:
             counter_message += 1
+            collect_names_country_in_one_area('message text')
             country = all_countries_name[all_countries_name_lower.index(message.text.lower())]
             # delete_message(message, 0, counter_message, m_keyb=False)
             send_all_countries_menu(message, data=country)
