@@ -691,6 +691,6 @@ def read_users(message):
         inline_kb(message, text, ['ok'], send='send', rw=1, butt_down=True)
 
 
-print('bot started')
-main()
-bot.polling()
+# print('bot started')
+# main()
+# bot.polling()
