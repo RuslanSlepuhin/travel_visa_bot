@@ -182,8 +182,8 @@ def main():
 
         if message.text.lower() in all_countries_name_lower:
             counter_message += 1
-            delete_message(message, 0, counter_message, m_keyb=False)
             country = all_countries_name[all_countries_name_lower.index(message.text.lower())]
+            # delete_message(message, 0, counter_message, m_keyb=False)
             send_all_countries_menu(message, data=country)
         else:
             counter_message += 1
@@ -503,22 +503,27 @@ def delete_message(
 
     if TG == 'free_visa':
         if message.text == 'Условно безвизовые страны для белорусов:':
+            counter_message -= 1
             try:
                 bot.delete_message(message.chat.id, message.message_id + 1)
             except Exception:
                 pass
         elif message.text == 'Список безвизовых стран для белорусов 2022:':
+            counter_message -= 2
             try:
                 bot.delete_message(message.chat.id, message.message_id + 1)
                 bot.delete_message(message.chat.id, message.message_id + 2)
             except Exception:
                 pass
+
     if TG == 'all_countries':
-        try:
-            bot.delete_message(message.chat.id, message.message_id + 1)
-        except Exception:
-            pass
-        
+        if message.text != 'ещё:':
+            counter_message -= 1
+            try:
+                bot.delete_message(message.chat.id, message.message_id + 1)
+            except Exception:
+                pass
+
     for i in range(start, end):
         try:
             bot.delete_message(message.chat.id, message.message_id-i)
@@ -527,8 +532,6 @@ def delete_message(
     counter_message = 0
 
     if m_keyb == True:
-        # bot.send_animation(message.chat.id, 'https://media.giphy.com/media/13GIgrGdslD9oQ/giphy.gif')
-        # counter_message += 1
         main_keyboard(message, text)
 
 
@@ -688,6 +691,6 @@ def read_users(message):
         inline_kb(message, text, ['ok'], send='send', rw=1, butt_down=True)
 
 
-# print('bot started')
-# main()
-# bot.polling()
+print('bot started')
+main()
+bot.polling()
