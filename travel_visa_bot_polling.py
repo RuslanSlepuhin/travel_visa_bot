@@ -684,5 +684,4 @@ def read_users(message):
 print('bot started')
 collect_names_country_in_one_area('start')
 main()
-bot.polling()
-
+# bot.polling()
