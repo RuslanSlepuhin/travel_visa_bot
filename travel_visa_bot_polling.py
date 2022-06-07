@@ -193,7 +193,7 @@ def main():
             counter_message += 1
 
             # delete_message(message, 0, counter_message, m_keyb=False)
-            send_all_countries_menu(message, data=country)
+            send_all_countries_menu(message)
         else:
             counter_message += 1
             text = 'Возможно, по этой стране нет информации\n' \
@@ -358,21 +358,22 @@ def main_keyboard(message, text=f'Организуйте свой поиск в 
     counter_message += 1
 
 
-def send_all_countries_menu(message, data):
+def send_all_countries_menu(message):
+    global country
     delete_message(message, 0, counter_message, m_keyb=False)
     buttons = []
     row: int
-    if data in visa_list:
+    if country in visa_list:
         buttons.append('виза')
-    if data in covid_list:
+    if country in covid_list:
         buttons.append('covid-19')
-    if data in free_visa_list:
+    if country in free_visa_list:
         buttons.append('безвиз')
     if len(buttons) < 3:
         row = 1
     else:
         row = 3
-    inline_kb(message, data, buttons, send='send', rw=row, butt_down=True, tagg=None)
+    inline_kb(message, country, buttons, send='send', rw=row, butt_down=True, tagg=None)
 
 
 def visa_menu(message):
