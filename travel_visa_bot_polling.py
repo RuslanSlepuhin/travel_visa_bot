@@ -43,6 +43,8 @@ def main():
         message_history, \
         id_main_kb
 
+    collect_names_country_in_one_area('main')
+
     @bot.message_handler(commands=['start'])
     def start_user(message):
         global counter_message
@@ -682,6 +684,5 @@ def read_users(message):
 
 
 print('bot started')
-collect_names_country_in_one_area('start')
 main()
 # bot.polling()
